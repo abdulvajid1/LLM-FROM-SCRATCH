@@ -9,3 +9,4 @@ class Config:
     dropout:float = 0.1
     qkv_bias:bool = False
     vocab_size:int = 50257
+    device:str = 'cuda'

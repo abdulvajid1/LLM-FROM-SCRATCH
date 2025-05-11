@@ -8,7 +8,6 @@ import tiktoken
 from torch.utils.data import DataLoader, Dataset
 from config import Config
 
-
 # Layer Normalization layer
 class LayerNormalization(nn.Module):
     def __init__(self, config):
@@ -23,8 +22,6 @@ class LayerNormalization(nn.Module):
         x_norm = (x - x_mean) / (x_std + self.eps)
         return x * self.scale + self.shift
     
-    
-
 # FeedForward Layer
 class FeedForwardLayer(nn.Module):
     def __init__(self, config):
@@ -33,15 +30,14 @@ class FeedForwardLayer(nn.Module):
         hidden_size_multiplier = config.hidden_size_multiplier
         
         self.ff_layer = nn.Sequential(
-            nn.Linear(d_model, hidden_size_multiplier),
+            nn.Linear(d_model, hidden_size_multiplier * d_model),
             nn.GELU(),
-            nn.Linear(hidden_size_multiplier, d_model)        
+            nn.Linear(hidden_size_multiplier * d_model, d_model)        
         )
         
     def forward(self, x):
         return x + self.ff_layer(x)
     
-
 class SelfAttentionLayer(nn.Module):
     def __init__(self, config: Config):
         super().__init__()
@@ -117,4 +113,32 @@ class TransformerBlock(nn.Module):
         x = x + shortcut
         return x
     
-    
+
+class GPTModel(nn.Module):
+    def __init__(self, config: Config):
+        super().__init__()
+        self.token_embedding = nn.Embedding(config.vocab_size, embedding_dim=config.d_model)
+        self.pos_embedding = nn.Embedding(config.context_len, embedding_dim=config.d_model)
+        self.dropout = nn.Dropout(config.dropout)
+        
+        self.decoder_block = nn.Sequential(
+            *[TransformerBlock(config) for _ in range(config.n_layers)]
+            )
+        
+        self.final_layernorm = LayerNormalization(config)
+        self.final_linear = nn.Linear(config.d_model, config.vocab_size)
+        
+    def forward(self, x):
+        batch_size, seq_len = x.size()
+        token_embedding = self.token_embedding(x)
+        positions = torch.arange(0, seq_len, device=x.device)
+        pos_embedding = self.pos_embedding(positions)
+        x = token_embedding + pos_embedding
+        x = self.decoder_block(x)
+        x = self.dropout(x)
+        x = self.final_layernorm(x)
+        logits = self.final_linear(x)
+        return logits
+        
+        
+        
