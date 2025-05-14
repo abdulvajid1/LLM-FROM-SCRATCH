@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 @dataclass
 class Config:
     n_layers:int = 12

@@ -8,6 +8,9 @@ import tiktoken
 from torch.utils.data import DataLoader, Dataset
 from config import Config
 
+
+
+
 # Layer Normalization layer
 class LayerNormalization(nn.Module):
     def __init__(self, config):
