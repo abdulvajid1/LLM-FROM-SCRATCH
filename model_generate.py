@@ -3,7 +3,7 @@ import torch
 
 def generate(model,
              tokenizer,
-             device='cuda',
+             device='cpu',
              starting_context:str='i am a good',
              max_len=10,
              sampling=True,
